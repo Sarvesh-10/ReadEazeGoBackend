@@ -11,12 +11,12 @@ RUN go mod download
 COPY . .
 
 # Build the binary
-RUN go build -o backend .
+RUN go build -o backend ./cmd
 
 # Stage 2: Run
 FROM alpine:latest
 
-RUN apk add --no-cache ca-certificates
+
 
 COPY --from=builder /app/backend /usr/local/bin/backend
 
