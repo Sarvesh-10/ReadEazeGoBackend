@@ -3,23 +3,21 @@ FROM golang:1.24 AS builder
 
 WORKDIR /app
 
-# Copy go.mod and go.sum first for dependency caching
 COPY go.mod go.sum ./
 RUN go mod download
 
-# Copy the rest of the source code
 COPY . .
 
-# Build the binary
 RUN go build -o backend ./cmd
 
 # Stage 2: Run
 FROM alpine:latest
 
-
+# Install libc (some Go binaries need it)
+RUN apk add --no-cache libc6-compat
 
 COPY --from=builder /app/backend /usr/local/bin/backend
 
 EXPOSE 8080
 
-CMD ["backend"]
+CMD ["/usr/local/bin/backend"]
