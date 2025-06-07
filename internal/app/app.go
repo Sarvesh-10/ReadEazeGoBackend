@@ -24,7 +24,7 @@ type App struct {
 func NewApp() *App {
 	logger := util.NewLogger()
 	logger.Info("Creating a new App")
-	dsn := config.AppConfig.DBURL
+	dsn := config.AppConfig.DBURL + "sslmode=disable"
 
 	db, err := sql.Open("postgres", dsn)
 	if err != nil {
