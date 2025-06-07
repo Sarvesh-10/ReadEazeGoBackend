@@ -8,7 +8,7 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o backend ./cmd
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o backend ./cmd/main.go
 
 # Stage 2: Use Debian slim base image (includes glibc)
 FROM debian:bullseye-slim
@@ -17,4 +17,4 @@ COPY --from=builder /app/backend /usr/local/bin/backend
 
 EXPOSE 8080
 
-CMD ["/usr/local/bin/backend"]
+ENTRYPOINT ["/usr/local/bin/backend"]
