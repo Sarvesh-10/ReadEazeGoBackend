@@ -1,10 +1,7 @@
 package config
 
 import (
-	"log"
 	"os"
-
-	"github.com/joho/godotenv"
 )
 
 type Config struct {
@@ -23,10 +20,10 @@ var AppConfig Config
 
 func init() {
 	// Load environment variables from .env for local development
-	err := godotenv.Load()
-	if err != nil {
-		log.Println("Error loading .env file, relying on system environment variables")
-	}
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	log.Println("Error loading .env file, relying on system environment variables")
+	// }
 
 	// Assign environment variables
 	AppConfig = Config{
