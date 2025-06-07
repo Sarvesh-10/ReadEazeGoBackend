@@ -1,4 +1,4 @@
-# Stage 1: Build the Go binary statically
+# Stage 1: Build the Go binary statically with CGO disabled
 FROM golang:1.24 AS builder
 
 WORKDIR /app
@@ -8,15 +8,10 @@ RUN go mod download
 
 COPY . .
 
-# Build with CGO disabled for a static binary
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o backend ./cmd
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o backend ./cmd
 
-# Stage 2: Minimal runtime image
-FROM alpine:latest
-
-# Install libc6-compat only if you need it (for dynamic binaries)
-# For static binary, you can skip this line
-# RUN apk add --no-cache libc6-compat
+# Stage 2: Use Debian slim base image (includes glibc)
+FROM debian:bullseye-slim
 
 COPY --from=builder /app/backend /usr/local/bin/backend
 
