@@ -33,7 +33,7 @@ func main() {
 	defer app.DB.Close()
 	r := router.SetupRoutes(app.UserHandler, app.BookHandler, app.ChatHandler, logger)
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173"}, // React frontend address
+		AllowedOrigins:   []string{"*"}, // React frontend address
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
