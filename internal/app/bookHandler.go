@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/Sarvesh-10/ReadEazeBackend/internal/domain"
 	"github.com/Sarvesh-10/ReadEazeBackend/internal/middleware"
 	"github.com/Sarvesh-10/ReadEazeBackend/utility"
 	"github.com/gorilla/mux"
@@ -95,6 +96,8 @@ func (h *BookHandler) GetBooksMeta(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+	if books == nil {
+		books = []domain.BookMetaData{} // Ensure we return an empty array if no books found
+	}
 	json.NewEncoder(w).Encode(books)
-
 }
