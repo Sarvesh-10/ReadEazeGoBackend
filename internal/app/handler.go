@@ -104,10 +104,9 @@ func (h *UserHandler) LoginHandler(w http.ResponseWriter, r *http.Request) error
 		Name:     "token",
 		Value:    token,
 		HttpOnly: true,
-		Secure:   true, // Change to `true` in HTTPS
+		Secure:   false, // Change to `true` in HTTPS
 		Path:     "/",
-		SameSite: http.SameSiteNoneMode, // ✅ Required for cross-origin cookies
-		Domain:   "localhost",           // ✅ Helps with localhost cookie storage
+		SameSite: http.SameSiteLaxMode, // ✅ Required for cross-origin cookies
 	})
 
 	h.logger.Info("Erro 3")

@@ -7,17 +7,16 @@ import (
 	"github.com/Sarvesh-10/ReadEazeBackend/internal/app"
 	"github.com/Sarvesh-10/ReadEazeBackend/router"
 	"github.com/Sarvesh-10/ReadEazeBackend/utility"
-	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/rs/cors"
 )
 
-func init() {
-	err := godotenv.Load() // Only needed for local dev
-	if err != nil {
-		panic("Error loading .env file")
-	}
-}
+// func init() {
+// 	err := godotenv.Load() // Only needed for local dev
+// 	if err != nil {
+// 		panic("Error loading .env file")
+// 	}
+// }
 
 var (
 	DB_USER     = config.AppConfig.DBUser
@@ -34,7 +33,7 @@ func main() {
 	defer app.DB.Close()
 	r := router.SetupRoutes(app.UserHandler, app.BookHandler, app.ChatHandler, logger)
 	c := cors.New(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173"}, // React frontend address
+		AllowedOrigins:   []string{"*"}, // React frontend address
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders:   []string{"Content-Type", "Authorization"},
 		AllowCredentials: true,
