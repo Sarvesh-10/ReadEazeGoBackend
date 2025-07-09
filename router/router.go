@@ -31,6 +31,13 @@ func SetupRoutes(userHandler *app.UserHandler, bookHandler *app.BookHandler, cha
 		userHandler.LogoutHandler(w, r)
 	}).Methods("POST")
 
+	r.HandleFunc("/refresh", func(w http.ResponseWriter, r *http.Request) {
+		if err := userHandler.RefreshTokenHandler(w, r); err != nil {
+			logger.Error("Error refreshing token: %s", err.Error())
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}).Methods("POST")
+
 	RegisterBookRoutes(r, bookHandler)
 
 	r.HandleFunc("/chat", chatHandler.HandleChat).Methods("POST")

@@ -22,13 +22,16 @@ func NewUserRepository(db *sql.DB, logger *utility.Logger) *UserRepositoryImpl {
 }
 
 func (ur *UserRepositoryImpl) CreateUser(user *User) (int64, error) {
-	result, err := ur.db.Exec("INSERT INTO users (name, password, email) VALUES ($1, $2, $3)", user.Name, user.Password, user.Email)
+	var id int64
+	err := ur.db.QueryRow(
+		`INSERT INTO users (name, password, email) 
+         VALUES ($1, $2, $3) RETURNING id`,
+		user.Name, user.Password, user.Email,
+	).Scan(&id)
+
 	if err != nil {
+		ur.logger.Error("Error inserting user: %s", err.Error())
 		return -1, err
-	}
-	id, errr := result.LastInsertId()
-	if errr != nil {
-		return -1, nil
 	}
 
 	return id, nil

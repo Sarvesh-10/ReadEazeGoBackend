@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/Sarvesh-10/ReadEazeBackend/utility"
@@ -16,7 +17,8 @@ func JWTMiddleWare(next http.Handler) http.Handler {
 	logger := utility.NewLogger()
 	logger.Info("GOT REAUEST")
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
+		logger.Info("Checking for token in request")
+		logger.Info(fmt.Sprintf("Cookies: %+v", r.Cookies()))
 		cookie, err := r.Cookie("token")
 		if err != nil {
 			logger.Error("token is missing")
