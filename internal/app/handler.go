@@ -41,8 +41,9 @@ func (h *UserHandler) SignUpHandler(w http.ResponseWriter, r *http.Request) erro
 		return err
 
 	}
+	h.logger.Info("Decoded user successfully", user)
 	h.service.logger.Info("generating token successfully")
-	id, token, err := h.service.RegisterUser(user)
+	id, token, refreshToken, err := h.service.RegisterUser(user)
 	h.service.logger.Info("User token successfully")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -55,6 +56,15 @@ func (h *UserHandler) SignUpHandler(w http.ResponseWriter, r *http.Request) erro
 		HttpOnly: true,
 		Secure:   false,
 		SameSite: http.SameSiteNoneMode,
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		Path:     "/refresh", // optional: scope to only refresh route
+		HttpOnly: true,
+		Secure:   false, // ✅ Set to true in production with HTTPS
+		SameSite: http.SameSiteLaxMode,
+		MaxAge:   300, // 7 days
 	})
 	resp := Response{Message: "User registered successfully", UserId: id}
 	response, err := json.Marshal(resp)
@@ -75,7 +85,9 @@ func (h *UserHandler) LoginHandler(w http.ResponseWriter, r *http.Request) error
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return err
 	}
+
 	user, err := h.service.GetByEmail(loginRequest.Email)
+	h.logger.Info("HERE IN GET USER BY EMAIL", user)
 
 	if err != nil {
 		fmt.Printf("HERE in teh get uesr fails")
@@ -100,9 +112,24 @@ func (h *UserHandler) LoginHandler(w http.ResponseWriter, r *http.Request) error
 	h.logger.Info("Generation successful")
 	fmt.Println("Setting cookie: token=", token)
 
+	refreshToken, err := utility.GenerateRefreshToken()
+	if err != nil {
+		http.Error(w, "Failed to generate refresh token: "+err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	h.service.refreshRepo.Store(user.ID, utility.HashToken(refreshToken), time.Now().Add(time.Hour*24*7))
+
 	http.SetCookie(w, &http.Cookie{
 		Name:     "token",
 		Value:    token,
+		HttpOnly: true,
+		Secure:   false, // Change to `true` in HTTPS
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode, // ✅ Required for cross-origin cookies
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
 		HttpOnly: true,
 		Secure:   false, // Change to `true` in HTTPS
 		Path:     "/",
@@ -127,4 +154,44 @@ func (h *UserHandler) LogoutHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("Logged out successfully"))
+}
+
+func (h *UserHandler) RefreshTokenHandler(w http.ResponseWriter, r *http.Request) error {
+	h.logger.Info("Refreshing session", r)
+	cookie, err := r.Cookie("refresh_token")
+	if err != nil {
+		http.Error(w, "Refresh token not found", http.StatusUnauthorized)
+		return err
+	}
+	refresh_token := cookie.Value
+	if refresh_token == "" {
+		http.Error(w, "Refresh token is empty", http.StatusUnauthorized)
+		return err
+	}
+	accessToken, newRefreshToken, err := h.service.RefreshSession(refresh_token)
+	if err != nil {
+		http.Error(w, "Failed to refresh session: "+err.Error(), http.StatusInternalServerError)
+		return err
+	}
+	http.SetCookie(w, &http.Cookie{
+		Name:     "token",
+		Value:    accessToken,
+		HttpOnly: true,
+		Secure:   false, // Change to `true` in HTTPS
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode, // ✅ Required for cross-origin cookies
+	})
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    newRefreshToken,
+		HttpOnly: true,
+		Secure:   false, // Change to `true` in HTTPS
+		Path:     "/",
+		SameSite: http.SameSiteLaxMode, // ✅ Required for cross-origin cookies
+	})
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Session refreshed successfully"))
+	return nil
+
 }

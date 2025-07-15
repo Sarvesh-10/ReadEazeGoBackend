@@ -28,12 +28,12 @@ func init() {
 	// Assign environment variables
 	AppConfig = Config{
 		JWTSecret:   getEnv("JWT_SECRET", "default_jwt_secret"),
-		DBUser:      getEnv("DB_USER", "default_user"),
-		DBPassword:  getEnv("DB_PASSWORD", "default_password"),
+		DBUser:      getEnv("DB_USER", "postgres"),
+		DBPassword:  getEnv("DB_PASSWORD", "postgres"),
 		DBHost:      getEnv("DB_HOST", "localhost"),
 		DBPort:      getEnv("DB_PORT", "5432"),
-		DBName:      getEnv("DB_NAME", "default_db"),
-		DBURL:       getEnv("DB_URL", "postgres://default_user:default_password@localhost:5432/default_db"),
+		DBName:      getEnv("DB_NAME", "readeaze"),
+		DBURL:       getEnv("DB_URL", "postgres://postgres:postgres@localhost:5432/readeaze"),
 		LlamaAPIKey: getEnv("LLAMA_API_KEY", "default_llama_key"),
 		LLMURL:      getEnv("LLM_URL", "http://localhost:8000"),
 	}

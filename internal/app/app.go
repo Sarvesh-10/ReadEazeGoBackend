@@ -31,9 +31,9 @@ func NewApp() *App {
 		logger.Error("Error connecting to database: %s", err.Error())
 		return nil
 	}
-
+	refreshRepo := domain.NewRefreshTokenRepository(db, logger)
 	userRepo := domain.NewUserRepository(db, logger)
-	userService := NewUserService(userRepo, logger)
+	userService := NewUserService(userRepo, logger, refreshRepo)
 	userHandler := NewUserHandler(userService, logger)
 
 	bookRepo := domain.NewBookRepository(db)
