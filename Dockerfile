@@ -1,5 +1,5 @@
-# Stage 1: Build the Go binary statically with CGO disabled
-FROM golang:1.24 AS builder
+# Stage 1: Build with CGO enabled
+FROM golang:1.22-bullseye AS builder
 
 WORKDIR /app
 
@@ -8,10 +8,32 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -installsuffix cgo -o backend ./cmd/main.go
+ENV CGO_ENABLED=1
+ENV GOOS=linux
+ENV GOARCH=amd64
 
-# Stage 2: Use Debian slim base image (includes glibc)
+# Install GCC and MuPDF dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libc6-dev \
+    libmupdf-dev \
+    mupdf-tools \
+    libharfbuzz-dev \
+    libjpeg-dev \
+    libopenjp2-7-dev
+
+# Build the binary
+RUN go build -o backend ./cmd/main.go
+
+# Stage 2: Runtime image with minimal deps
 FROM debian:bullseye-slim
+
+RUN apt-get update && apt-get install -y \
+    libmupdf-dev \
+    libharfbuzz0b \
+    libjpeg62-turbo \
+    libopenjp2-7 && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/backend /usr/local/bin/backend
 
