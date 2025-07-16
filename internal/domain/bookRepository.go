@@ -2,6 +2,7 @@ package domain
 
 import (
 	"database/sql"
+	"encoding/base64"
 )
 
 type BookRepository struct {
@@ -14,8 +15,9 @@ func NewBookRepository(db *sql.DB) *BookRepository {
 
 func (r *BookRepository) SaveBook(book Book) error {
 	_, err := r.DB.Exec(
-		"INSERT INTO books (user_id, name, file_data, uploaded_at) VALUES ($1, $2, $3, $4)",
-		book.UserID, book.Name, book.PDFData, book.UploadedAt,
+		`INSERT INTO books (user_id, name, file_data, uploaded_at, cover_image)
+		 VALUES ($1, $2, $3, $4, $5)`,
+		book.UserID, book.Name, book.PDFData, book.UploadedAt, book.CoverImage,
 	)
 	return err
 }
@@ -35,7 +37,7 @@ func (r *BookRepository) GetBookByID(bookID int, userID int) (*Book, error) {
 
 func (r *BookRepository) GetBooksMetaByUser(UserId int) ([]BookMetaData, error) {
 	var books []BookMetaData
-	rows, err := r.DB.Query("SELECT id, name FROM books WHERE user_id = $1", UserId)
+	rows, err := r.DB.Query("SELECT id, name, cover_image FROM books WHERE user_id = $1", UserId)
 	if err != nil {
 		return nil, err
 	}
@@ -43,9 +45,12 @@ func (r *BookRepository) GetBooksMetaByUser(UserId int) ([]BookMetaData, error) 
 
 	for rows.Next() {
 		var book BookMetaData
-		if err := rows.Scan(&book.ID, &book.Name); err != nil {
+		var imageData []byte
+		if err := rows.Scan(&book.ID, &book.Name, &imageData); err != nil {
 			return nil, err
 		}
+		book.CoverImage = "data:image/jpeg;base64," + base64.StdEncoding.EncodeToString(imageData)
+
 		books = append(books, book)
 	}
 
