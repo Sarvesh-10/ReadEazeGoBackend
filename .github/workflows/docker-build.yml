@@ -1,4 +1,4 @@
-name: Build and Push Go Backend Image
+name: Build and Push Go Backend & Migration Images
 
 on:
   push:
@@ -38,6 +38,17 @@ jobs:
           file: Dockerfile
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/readeaze-images:${{ github.ref_name == 'master' && 'backend-latest' || format('backend-{0}', github.ref_name) }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      - name: Build and push migration image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          target: migrate
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/readeaze-images:${{ github.ref_name == 'master' && 'migrate-latest' || format('migrate-{0}', github.ref_name) }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
