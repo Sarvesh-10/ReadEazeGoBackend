@@ -73,7 +73,7 @@ func (h *BookHandler) UploadBook(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Failed to save user book profile", http.StatusInternalServerError)
 		h.logger.Error("Failed to save user book profile: %s", err.Error())
-		return
+		// return
 	}
 	err = h.UserBookProfile.SaveUserBookProfileInDB(userBookProfile)
 	if err != nil {
