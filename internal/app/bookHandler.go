@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"net/http"
@@ -8,24 +9,29 @@ import (
 
 	"github.com/Sarvesh-10/ReadEazeBackend/internal/domain"
 	"github.com/Sarvesh-10/ReadEazeBackend/internal/middleware"
+	"github.com/Sarvesh-10/ReadEazeBackend/internal/services"
 	"github.com/Sarvesh-10/ReadEazeBackend/utility"
 	"github.com/gorilla/mux"
+	"rsc.io/pdf"
 )
 
 type BookHandler struct {
-	BookService *BookService
-	logger      utility.Logger
+	BookService     *BookService
+	UserBookProfile *services.UserBookProfileService
+	logger          utility.Logger
 }
 
-func NewBookHandler(service *BookService, logger *utility.Logger) *BookHandler {
+func NewBookHandler(service *BookService, UserBookProfile *services.UserBookProfileService, logger *utility.Logger) *BookHandler {
 	return &BookHandler{
-		BookService: service,
-		logger:      *logger,
+		BookService:     service,
+		UserBookProfile: UserBookProfile,
+		logger:          *logger,
 	}
 }
 
 func (h *BookHandler) UploadBook(w http.ResponseWriter, r *http.Request) {
 	userID, ok := r.Context().Value(middleware.UserIDKey).(int)
+	// ctx := r.Context()
 	h.logger.Info("HERE IN UPLoad books")
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
@@ -33,6 +39,7 @@ func (h *BookHandler) UploadBook(w http.ResponseWriter, r *http.Request) {
 	}
 
 	file, header, err := r.FormFile("file")
+	mode := r.FormValue("mode")
 	if err != nil {
 		http.Error(w, "Failed to read file", http.StatusBadRequest)
 		h.logger.Info(err.Error())
@@ -46,15 +53,49 @@ func (h *BookHandler) UploadBook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.BookService.UploadBook(userID, header.Filename, pdfData)
+	book, err := h.BookService.UploadBook(userID, header.Filename, pdfData)
 	if err != nil {
 		http.Error(w, "Failed to save book", http.StatusInternalServerError)
 		h.logger.Error(err.Error())
 		return
 	}
+	// h.logger.Info("Book uploaded successfully with ID: %d", bookID)
+	totalPageCount, err := h.getPDFPageCount(pdfData)
+	if err != nil {
+		// http.Error(w, "Failed to get page count", http.StatusInternalServerError)
+		totalPageCount = -1
+		h.logger.Error("Failed to get page count: %s", err.Error())
+
+	}
+	userBookProfile := h.UserBookProfile.CreateUserBookProfile(book, mode, totalPageCount)
+	err = h.UserBookProfile.SaveUserBookProfileInCache(userBookProfile)
+	if err != nil {
+		http.Error(w, "Failed to save user book profile", http.StatusInternalServerError)
+		h.logger.Error("Failed to save user book profile: %s", err.Error())
+		return
+	}
+	err = h.UserBookProfile.SaveUserBookProfileInDB(userBookProfile)
+	if err != nil {
+		http.Error(w, "Failed to save user book profile in DB", http.StatusInternalServerError)
+		h.logger.Error("Failed to save user book profile in DB: %s", err.Error())
+		//delete book from repository
+		errDelete := h.BookService.DeleteBook(book.ID, userID)
+		if errDelete != nil {
+			h.logger.Error("Failed to delete book from repository after profile save failure: %s", errDelete.Error())
+		}
+		return
+	}
+
+	//save this in the redis with ttl of 2 hours
+	// save in the postgres db
+
+	if userBookProfile.Mode == "study" {
+		//do the rag
+	}
 
 	response := map[string]string{"message": "Book uploaded successfully"}
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Status", "201 Created")
 	json.NewEncoder(w).Encode(response)
 }
 
@@ -100,4 +141,14 @@ func (h *BookHandler) GetBooksMeta(w http.ResponseWriter, r *http.Request) {
 		books = []domain.BookMetaData{} // Ensure we return an empty array if no books found
 	}
 	json.NewEncoder(w).Encode(books)
+}
+
+func (h *BookHandler) getPDFPageCount(data []byte) (int, error) {
+	h.logger.Info("pdf data", string(data[:10]))
+	reader := bytes.NewReader(data)
+	pdfReader, err := pdf.NewReader(reader, int64(len(data)))
+	if err != nil {
+		return 0, err
+	}
+	return pdfReader.NumPage(), nil
 }
