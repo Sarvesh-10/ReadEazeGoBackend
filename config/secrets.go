@@ -37,7 +37,7 @@ func init() {
 		DBURL:       getEnv("DB_URL", "postgres://postgres:postgres@localhost:5432/readeaze"),
 		LlamaAPIKey: getEnv("LLAMA_API_KEY", "default_llama_key"),
 		LLMURL:      getEnv("LLM_URL", "http://localhost:8000"),
-		REDIS_URL:   getEnv("REDIS_URL", "redis://localhost:6379/0"),
+		REDIS_URL:   getEnv("REDIS_URL", "redis://redis:6379/0"),
 	}
 }
 
