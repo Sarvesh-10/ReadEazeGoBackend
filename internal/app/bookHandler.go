@@ -9,6 +9,7 @@ import (
 
 	"github.com/Sarvesh-10/ReadEazeBackend/internal/domain"
 	"github.com/Sarvesh-10/ReadEazeBackend/internal/middleware"
+	"github.com/Sarvesh-10/ReadEazeBackend/internal/models"
 	"github.com/Sarvesh-10/ReadEazeBackend/internal/services"
 	"github.com/Sarvesh-10/ReadEazeBackend/utility"
 	"github.com/gorilla/mux"
@@ -90,7 +91,34 @@ func (h *BookHandler) UploadBook(w http.ResponseWriter, r *http.Request) {
 	// save in the postgres db
 
 	if userBookProfile.Mode == "study" {
-		//do the rag
+		// Create the job
+		job := models.BookIndexingJob{
+			BookID: book.ID,
+			UserID: userID,
+			Status: models.JobStatusPending,
+		}
+		// Save job to DB as PENDING
+		jobID, err := h.BookService.BookRepo.SaveBookIndexingJob(job)
+		if err != nil {
+			h.logger.Error("Failed to save indexing job: %s", err.Error())
+			http.Error(w, "Failed to create indexing job", http.StatusInternalServerError)
+			return
+		}
+		job.ID = jobID
+
+		// Push job to Redis queue "books"
+		jobBytes, err := json.Marshal(job)
+		if err != nil {
+			h.logger.Error("Failed to marshal job: %s", err.Error())
+			http.Error(w, "Failed to queue indexing job", http.StatusInternalServerError)
+			return
+		}
+		err = h.BookService.cache.PushToQueue("book_indexing_queue", jobBytes)
+		if err != nil {
+			h.logger.Error("Failed to push job to Redis queue: %s", err.Error())
+			http.Error(w, "Failed to queue indexing job", http.StatusInternalServerError)
+			return
+		}
 	}
 
 	response := map[string]string{"message": "Book uploaded successfully"}

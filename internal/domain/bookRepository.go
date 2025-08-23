@@ -18,6 +18,17 @@ type BookRepositoryImpl struct {
 	DB *sql.DB
 }
 
+func (r *BookRepositoryImpl) SaveBookIndexingJob(job models.BookIndexingJob) (int, error) {
+	var jobID int
+	err := r.DB.QueryRow(
+		`INSERT INTO book_indexing_jobs (book_id, user_id, status, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+		job.BookID, job.UserID, string(job.Status), job.CreatedAt, job.UpdatedAt,
+	).Scan(&jobID)
+	if err != nil {
+		return 0, err
+	}
+	return jobID, nil
+}
 func NewBookRepository(db *sql.DB) *BookRepositoryImpl {
 	return &BookRepositoryImpl{DB: db}
 }

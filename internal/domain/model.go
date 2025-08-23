@@ -23,3 +23,21 @@ type BookMetaData struct {
 	Name       string `json:"name"`
 	CoverImage string `json:"cover_image"` // base64 string
 }
+ 
+type JobStatus string
+
+const (
+	JobStatusPending    JobStatus = "PENDING"
+	JobStatusInProgress JobStatus = "IN_PROGRESS"
+	JobStatusCompleted  JobStatus = "COMPLETED"
+	JobStatusFailed     JobStatus = "FAILED"
+)
+
+type BookIndexingJob struct {
+	ID        int       `json:"id"`
+	BookID    int       `json:"book_id"`
+	UserID    int       `json:"user_id"`
+	Status    JobStatus `json:"status"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+}
