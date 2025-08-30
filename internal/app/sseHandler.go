@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/Sarvesh-10/ReadEazeBackend/internal/middleware"
 	"github.com/Sarvesh-10/ReadEazeBackend/internal/models"
@@ -20,6 +21,8 @@ func SSEHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
+	ticker := time.NewTicker(20 * time.Second) // Ping every 20 seconds
+	defer ticker.Stop()
 
 	client := models.CreateClient(userID)
 	defer models.RemoveSSEClient(userID)
@@ -28,6 +31,10 @@ func SSEHandler(w http.ResponseWriter, r *http.Request) {
 		select {
 		case msg := <-client.Channel:
 			fmt.Fprintf(w, "data: %s\n\n", msg)
+			flusher.Flush()
+		case <-ticker.C:
+			// Send heartbeat
+			fmt.Fprintf(w, ": ping\n\n")
 			flusher.Flush()
 		case <-r.Context().Done():
 			return
