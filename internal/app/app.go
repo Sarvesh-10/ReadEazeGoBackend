@@ -22,6 +22,7 @@ type App struct {
 	BookHandler *BookHandler
 	ChatService *ChatService
 	ChatHandler *ChatHandler
+	Cache       *redis.Client
 }
 
 func NewApp() *App {
@@ -53,6 +54,7 @@ func NewApp() *App {
 
 	chatService := NewChatService(config.AppConfig.LlamaAPIKey, logger)
 	chatHandler := NewChatHandler(chatService, logger)
+
 	return &App{
 		DB:          db,
 		Logger:      *logger,
@@ -64,5 +66,6 @@ func NewApp() *App {
 		BookHandler: bookHandler,
 		ChatService: chatService,
 		ChatHandler: chatHandler,
+		Cache:       cache,
 	}
 }
