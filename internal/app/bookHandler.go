@@ -119,6 +119,8 @@ func (h *BookHandler) UploadBook(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to queue indexing job", http.StatusInternalServerError)
 			return
 		}
+		h.BookService.cache.PushToQueue("output_jobs_queue", jobBytes)
+
 	}
 
 	response := map[string]string{"message": "Book uploaded successfully"}
