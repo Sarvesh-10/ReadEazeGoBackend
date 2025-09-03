@@ -23,7 +23,7 @@ type BookMetaData struct {
 	Name       string `json:"name"`
 	CoverImage string `json:"cover_image"` // base64 string
 }
- 
+
 type JobStatus string
 
 const (
@@ -40,4 +40,11 @@ type BookIndexingJob struct {
 	Status    JobStatus `json:"status"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+type SSEMessage struct {
+	BookID  int       `json:"book_id"`
+	Status  JobStatus `json:"status"`
+	Name    string    `json:"name"`
+	Message string    `json:"message,omitempty"`
 }

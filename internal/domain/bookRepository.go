@@ -1,10 +1,14 @@
 package domain
 
 import (
+	"context"
 	"database/sql"
 	"encoding/base64"
+	"encoding/json"
+	"fmt"
 
 	models "github.com/Sarvesh-10/ReadEazeBackend/internal/models"
+	redis "github.com/redis/go-redis/v9"
 )
 
 type BookRepository interface {
@@ -15,7 +19,8 @@ type BookRepository interface {
 	DeleteBook(bookID int, userID int) error
 }
 type BookRepositoryImpl struct {
-	DB *sql.DB
+	DB    *sql.DB
+	cache *redis.Client
 }
 
 func (r *BookRepositoryImpl) SaveBookIndexingJob(job models.BookIndexingJob) (int, error) {
@@ -29,8 +34,8 @@ func (r *BookRepositoryImpl) SaveBookIndexingJob(job models.BookIndexingJob) (in
 	}
 	return jobID, nil
 }
-func NewBookRepository(db *sql.DB) *BookRepositoryImpl {
-	return &BookRepositoryImpl{DB: db}
+func NewBookRepository(db *sql.DB, cache *redis.Client) *BookRepositoryImpl {
+	return &BookRepositoryImpl{DB: db, cache: cache}
 }
 
 func (r *BookRepositoryImpl) SaveBook(book Book) (int, error) {
@@ -107,4 +112,32 @@ func (r *BookRepositoryImpl) DeleteBook(bookID int, userID int) error {
 		return err
 	}
 	return nil
+}
+
+func (r *BookRepositoryImpl) GetBookName(userID, bookID int) (string, error) {
+	ctx := context.Background()
+	cacheKey := r.getBookNameKey(userID, bookID)
+
+	// 1. Check Redis cache
+	data, err := r.cache.Get(ctx, cacheKey).Result()
+	if err == nil {
+		var profile models.UserBookProfile
+		if unmarshalErr := json.Unmarshal([]byte(data), &profile); unmarshalErr == nil {
+			return profile.BookName, nil
+		}
+	}
+
+	// 2. If not found in Redis, check DB
+	var nameFromDB string
+	err = r.DB.QueryRowContext(ctx, "SELECT name FROM books WHERE id = $1", bookID).Scan(&nameFromDB)
+
+	if err != nil {
+		return "", err
+	}
+
+	return nameFromDB, nil
+}
+
+func (r *BookRepositoryImpl) getBookNameKey(userID, bookID int) string {
+	return fmt.Sprintf("user:%d:book:%d:profile", userID, bookID)
 }

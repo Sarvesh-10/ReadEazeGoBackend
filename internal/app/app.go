@@ -12,17 +12,18 @@ import (
 )
 
 type App struct {
-	DB          *sql.DB
-	Logger      util.Logger
-	UserRepo    domain.UserRepository
-	UserService *UserService
-	UserHandler *UserHandler
-	BookRepo    domain.BookRepositoryImpl
-	BookService *BookService
-	BookHandler *BookHandler
-	ChatService *ChatService
-	ChatHandler *ChatHandler
-	Cache       *redis.Client
+	DB            *sql.DB
+	Logger        util.Logger
+	UserRepo      domain.UserRepository
+	UserService   *UserService
+	UserHandler   *UserHandler
+	BookRepo      domain.BookRepositoryImpl
+	BookService   *BookService
+	BookHandler   *BookHandler
+	ChatService   *ChatService
+	ChatHandler   *ChatHandler
+	Cache         *redis.Client
+	StatusService *services.StatusService
 }
 
 func NewApp() *App {
@@ -47,7 +48,7 @@ func NewApp() *App {
 	userService := NewUserService(userRepo, logger, refreshRepo)
 	userHandler := NewUserHandler(userService, logger)
 
-	bookRepo := domain.NewBookRepository(db)
+	bookRepo := domain.NewBookRepository(db, cache)
 	bookService := NewBookService(bookRepo, logger, cacheRepo)
 	userBookProfileService := services.NewUserBookProfileService(bookRepo, logger, cacheRepo)
 	bookHandler := NewBookHandler(bookService, userBookProfileService, logger)
@@ -55,17 +56,20 @@ func NewApp() *App {
 	chatService := NewChatService(config.AppConfig.LlamaAPIKey, logger)
 	chatHandler := NewChatHandler(chatService, logger)
 
+	statusService := services.NewStatusService(bookRepo)
+
 	return &App{
-		DB:          db,
-		Logger:      *logger,
-		UserRepo:    userRepo,
-		UserService: userService,
-		UserHandler: userHandler,
-		BookRepo:    *bookRepo,
-		BookService: bookService,
-		BookHandler: bookHandler,
-		ChatService: chatService,
-		ChatHandler: chatHandler,
-		Cache:       cache,
+		DB:            db,
+		Logger:        *logger,
+		UserRepo:      userRepo,
+		UserService:   userService,
+		UserHandler:   userHandler,
+		BookRepo:      *bookRepo,
+		BookService:   bookService,
+		BookHandler:   bookHandler,
+		ChatService:   chatService,
+		ChatHandler:   chatHandler,
+		Cache:         cache,
+		StatusService: statusService,
 	}
 }

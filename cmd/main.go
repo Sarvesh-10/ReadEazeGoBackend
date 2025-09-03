@@ -41,7 +41,7 @@ func main() {
 	})
 	handler := c.Handler(r)
 	logger.Info("Starting server on port 8080")
-	go services.ListenStatusQueue(app.Cache)
+	go services.ListenStatusQueue(app.Cache, app.StatusService)
 
 	error := http.ListenAndServe(":8080", handler)
 	if error != nil {
