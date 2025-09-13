@@ -43,6 +43,7 @@ func SetupRoutes(userHandler *app.UserHandler, bookHandler *app.BookHandler, cha
 
 	r.HandleFunc("/chat", chatHandler.HandleChat).Methods("POST")
 	r.Handle("/sse", middleware.JWTMiddleWare(http.HandlerFunc(app.SSEHandler))).Methods("GET")
+	r.HandleFunc("/checkAuth", app.CheckAuthHander).Methods("GET")
 
 	logger.Info("✅ Routes setup complete!")
 	return r
