@@ -144,7 +144,17 @@ func (r *BookRepositoryImpl) getBookNameKey(userID, bookID int) string {
 
 func (r *BookRepositoryImpl) GetBookIndexingJob(bookID int, userID int) (models.BookIndexingJob, error) {
 	var bookIndexingJob models.BookIndexingJob
-	err := r.DB.QueryRow("SELECT * FROM book_indexing_jobs WHERE book_id = $1 AND user_id = $2", bookID, userID).Scan(&bookIndexingJob)
+	err := r.DB.QueryRow(
+		`SELECT id, book_id, user_id, status, created_at, updated_at FROM book_indexing_jobs WHERE book_id = $1 AND user_id = $2`,
+		bookID, userID,
+	).Scan(
+		&bookIndexingJob.ID,
+		&bookIndexingJob.BookID,
+		&bookIndexingJob.UserID,
+		&bookIndexingJob.Status,
+		&bookIndexingJob.CreatedAt,
+		&bookIndexingJob.UpdatedAt,
+	)
 	if err != nil {
 		return models.BookIndexingJob{}, err
 	}
