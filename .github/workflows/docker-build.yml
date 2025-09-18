@@ -36,6 +36,7 @@ jobs:
         with:
           context: .
           file: Dockerfile
+          target: backend
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/readeaze-images:${{ github.ref_name == 'master' && 'backend-latest' || format('backend-{0}', github.ref_name) }}
           cache-from: type=local,src=/tmp/.buildx-cache

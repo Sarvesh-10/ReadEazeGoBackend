@@ -5,6 +5,7 @@ import (
 
 	"github.com/Sarvesh-10/ReadEazeBackend/config"
 	"github.com/Sarvesh-10/ReadEazeBackend/internal/app"
+	"github.com/Sarvesh-10/ReadEazeBackend/internal/services"
 	"github.com/Sarvesh-10/ReadEazeBackend/router"
 	"github.com/Sarvesh-10/ReadEazeBackend/utility"
 	_ "github.com/lib/pq"
@@ -40,6 +41,7 @@ func main() {
 	})
 	handler := c.Handler(r)
 	logger.Info("Starting server on port 8080")
+	go services.ListenStatusQueue(app.Cache, app.StatusService)
 
 	error := http.ListenAndServe(":8080", handler)
 	if error != nil {
