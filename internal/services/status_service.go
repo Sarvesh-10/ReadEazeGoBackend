@@ -14,10 +14,10 @@ func NewStatusService(bookRepo *domain.BookRepositoryImpl) *StatusService {
 	return &StatusService{bookRepo: bookRepo}
 }
 
-func (s *StatusService) ProcessJob(job models.BookIndexingJob) domain.SSEMessage {
-	msg := domain.SSEMessage{
+func (s *StatusService) ProcessJob(job models.BookIndexingJob) models.SSEMessage {
+	msg := models.SSEMessage{
 		BookID: job.BookID,
-		Status: domain.JobStatus(job.Status),
+		Status: models.JobStatus(job.Status),
 	}
 	bookName, err := s.bookRepo.GetBookName(job.UserID, job.BookID)
 

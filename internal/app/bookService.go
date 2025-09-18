@@ -8,6 +8,7 @@ import (
 
 	"github.com/Sarvesh-10/ReadEazeBackend/internal/domain"
 	"github.com/Sarvesh-10/ReadEazeBackend/internal/domain/repository"
+	"github.com/Sarvesh-10/ReadEazeBackend/internal/models"
 	"github.com/Sarvesh-10/ReadEazeBackend/utility"
 	"github.com/gen2brain/go-fitz"
 )
@@ -71,6 +72,9 @@ func (s *BookService) UploadBook(userID int, name string, pdfData []byte) (domai
 
 func (s *BookService) GetBook(bookID, userID int) (*domain.Book, error) {
 	return s.BookRepo.GetBookByID(bookID, userID)
+}
+func (s *BookService) GetBookIndexingJob(bookID, userID int) (models.BookIndexingJob, error) {
+	return s.BookRepo.GetBookIndexingJob(bookID, userID)
 }
 
 func (s *BookService) GetBookMetadataByUser(userID int) ([]domain.BookMetaData, error) {

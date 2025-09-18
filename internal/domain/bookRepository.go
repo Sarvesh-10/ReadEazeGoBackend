@@ -141,3 +141,12 @@ func (r *BookRepositoryImpl) GetBookName(userID, bookID int) (string, error) {
 func (r *BookRepositoryImpl) getBookNameKey(userID, bookID int) string {
 	return fmt.Sprintf("user:%d:book:%d:profile", userID, bookID)
 }
+
+func (r *BookRepositoryImpl) GetBookIndexingJob(bookID int, userID int) (models.BookIndexingJob, error) {
+	var bookIndexingJob models.BookIndexingJob
+	err := r.DB.QueryRow("SELECT * FROM book_indexing_jobs WHERE book_id = $1 AND user_id = $2", bookID, userID).Scan(&bookIndexingJob)
+	if err != nil {
+		return models.BookIndexingJob{}, err
+	}
+	return bookIndexingJob, nil
+}

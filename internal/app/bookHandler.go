@@ -18,14 +18,16 @@ import (
 
 type BookHandler struct {
 	BookService     *BookService
+	StatusService   *services.StatusService
 	UserBookProfile *services.UserBookProfileService
 	logger          utility.Logger
 }
 
-func NewBookHandler(service *BookService, UserBookProfile *services.UserBookProfileService, logger *utility.Logger) *BookHandler {
+func NewBookHandler(service *BookService, statusService *services.StatusService, UserBookProfile *services.UserBookProfileService, logger *utility.Logger) *BookHandler {
 	return &BookHandler{
 		BookService:     service,
 		UserBookProfile: UserBookProfile,
+		StatusService:   statusService,
 		logger:          *logger,
 	}
 }
@@ -148,7 +150,20 @@ func (h *BookHandler) GetBook(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Book not found", http.StatusNotFound)
 		return
 	}
+	bookIndexingJob, err := h.BookService.GetBookIndexingJob(bookID, userID)
+	if err != nil {
+		h.logger.Error("Error getting book indexing job status: %s", err.Error())
+		// Proceeding even if there's an error fetching the status
+	}
+	if bookIndexingJob.Status != models.JobStatusCompleted {
 
+		h.logger.Info("Re-queued book indexing job for book ID %d", bookID)
+		err := h.BookService.cache.LeftPush("output_jobs_queue", bookIndexingJob)
+		if err != nil {
+			h.logger.Error("Failed to update the status of the job: %s", err.Error())
+		}
+
+	}
 	w.Header().Set("Content-Type", "application/pdf")
 	w.WriteHeader(http.StatusOK)
 	w.Write(book.PDFData)

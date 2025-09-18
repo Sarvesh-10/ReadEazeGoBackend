@@ -49,14 +49,13 @@ func NewApp() *App {
 	userHandler := NewUserHandler(userService, logger)
 
 	bookRepo := domain.NewBookRepository(db, cache)
+	statusService := services.NewStatusService(bookRepo)
 	bookService := NewBookService(bookRepo, logger, cacheRepo)
 	userBookProfileService := services.NewUserBookProfileService(bookRepo, logger, cacheRepo)
-	bookHandler := NewBookHandler(bookService, userBookProfileService, logger)
+	bookHandler := NewBookHandler(bookService, statusService, userBookProfileService, logger)
 
 	chatService := NewChatService(config.AppConfig.LlamaAPIKey, logger)
 	chatHandler := NewChatHandler(chatService, logger)
-
-	statusService := services.NewStatusService(bookRepo)
 
 	return &App{
 		DB:            db,

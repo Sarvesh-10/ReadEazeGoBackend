@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -16,6 +17,7 @@ type CacheRepository interface {
 	GetUserBookProfile(userID int, bookID int) (string, error)
 	DeleteUserBookProfile(userID int, bookID int) error
 	PushToQueue(queueName string, data []byte) error
+	LeftPush(queueName string, bookIndexingJob models.BookIndexingJob) error
 }
 
 type RedisBookCache struct {
@@ -31,6 +33,13 @@ func NewRedisBookCache(redisClient *redis.Client, logger *utility.Logger) *Redis
 }
 func (r *RedisBookCache) PushToQueue(queueName string, data []byte) error {
 	return r.redis.RPush(context.Background(), queueName, data).Err()
+}
+func (r *RedisBookCache) LeftPush(queueName string, bookIndexingJob models.BookIndexingJob) error {
+	data, err := json.Marshal(bookIndexingJob)
+	if err != nil {
+		return err
+	}
+	return r.redis.LPush(context.Background(), queueName, data).Err()
 }
 func (r *RedisBookCache) SaveUserBookProfile(ctx context.Context, userID int, bookID int, profileData models.UserBookProfile) error {
 	key := r.getUserBookProfileKey(userID, bookID)

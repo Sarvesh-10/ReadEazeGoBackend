@@ -7,7 +7,6 @@ import (
 	"log"
 	"strings"
 
-	"github.com/Sarvesh-10/ReadEazeBackend/internal/domain"
 	"github.com/Sarvesh-10/ReadEazeBackend/internal/models"
 	"github.com/redis/go-redis/v9"
 )
@@ -45,7 +44,7 @@ func ListenStatusQueue(cache *redis.Client, statusService *StatusService) {
 	}
 }
 
-func GenerateJobMessage(msg domain.SSEMessage) string {
+func GenerateJobMessage(msg models.SSEMessage) string {
 	status := strings.ToLower(string(msg.Status))
 
 	if msg.Name != "" {
